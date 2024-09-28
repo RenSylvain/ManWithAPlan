@@ -1,0 +1,528 @@
+/**
+ * Auto-generated code below aims at helping you parse
+ * the standard input according to the problem statement.
+ **/
+
+// inputs is an array. W is width and H is height of the board.
+// N is the number of points of interest in the realm.
+var inputs = readline().split(' ');
+const W = parseInt(inputs[0]);
+const H = parseInt(inputs[1]);
+const N = parseInt(inputs[2]);
+// O is a string and represents objective of kings quest.
+const O = readline();
+//console.log(W,H,N);
+//console.log(O);
+let quest = O;
+
+let mapArray = [];
+for (let i = 0; i < H; i++) {
+    // line is a string with length W with each char representing a piece of land.
+    const line = readline();
+    //console.log(line);
+    // step 1, add each line to mapArray, creating a matrix representation of map.
+    mapArray.push(line.split(''));    
+}
+//console.log(mapArray);
+
+
+let poiArray = [];
+for (let i = 0; i < N; i++) {
+    // inputs is an array of strings, each iteration representing POI name and location.
+    var inputs = readline().split(' ');
+    // k is a string.
+    const k = inputs[0];
+    // x and y are integers.
+    const x = parseInt(inputs[1]);
+    const y = parseInt(inputs[2]);
+    //console.log(k,x,y);
+    // step 2, add each line to poiArray, to reference later and use.
+    poiArray.push([k,x,y]);
+    // step 3, change all I's in mapArray to their corresponding POI.
+    if(k == 'HOUSE'){
+        mapArray[y][x] = 'H';
+    } else if(k == 'CASTLE'){
+        mapArray[y][x] = 'C';
+    } else if(k == 'PRINCESS'){
+        mapArray[y][x] = 'P';
+    } else if(k == 'STABLE'){
+        mapArray[y][x] = 'ST';
+    } else if(k == 'TREASURE'){
+        mapArray[y][x] = 'T';
+    } else if(k == 'DRAGON'){
+        mapArray[y][x] = 'D';
+    } else if(k == 'BLACKSMITH'){
+        mapArray[y][x] = 'B';
+    } else if(k == 'WIZARD'){
+        mapArray[y][x] = 'WZ';
+    }
+}
+//console.log(poiArray);
+// copy and paste from here....
+
+// put castle as last item in poiArray.
+let poiArrayHolder = poiArray.splice(1,1);
+poiArray.push(poiArrayHolder[0]);
+
+//console.log(poiArray);
+// step 8: I need to pass in a "player stats" array into startingPoint to keep track of the players upgrades, poi history,
+// and total days as he goes through the various possible routes of the adventure. This will
+// make it possible to determine the route where the hero reaches the castle in the least days.
+// let heroStats = [0,0,0,0,0,0,0];
+// playerStats index positions: 
+// 0:armour 
+// 1:horse 
+// 2:killedDragon
+// 3:gotTreasure
+// 4:savedPrincess
+// 5:questCompleted
+// 6:equipmentBlock
+
+// step 4: assign starting location, quest location, and castle location coordinates
+// to corresponding arrays.
+// Adjust step 4: instead of hard code the assignment, search the poiArray and 
+// assign the location of that poi to the correspoinding variable. For the starting location,
+// include the hero object so we can keep track of it's stats beginning at the starting point.
+let startingPoint = [];
+let startingLocationArray = poiArray.find((element) => {return element[0] == 'HOUSE'});
+if(startingLocationArray != undefined){
+startingPoint.push(startingLocationArray[1],startingLocationArray[2],1,[0,0,0,0,0,0,0]); 
+}
+
+let princessLocation = [];
+let princessLocationArray = poiArray.find((element) => {return element[0] == 'PRINCESS'});
+if(princessLocationArray != undefined){
+princessLocation.push(princessLocationArray[1],princessLocationArray[2]);
+}
+
+let castleLocation = [];
+let castleLocationArray = poiArray.find((element) => {return element[0] == 'CASTLE'});
+if(castleLocationArray != undefined){
+castleLocation.push(castleLocationArray[1],castleLocationArray[2]);
+}
+
+let stableLocation = [];
+let stableLocationArray = poiArray.find((element) => {return element[0] == 'STABLE'});
+if(stableLocationArray != undefined){
+stableLocation.push(stableLocationArray[1],stableLocationArray[2]);
+}
+
+let treasureLocation = [];
+let treasureLocationArray = poiArray.find((element) => {return element[0] == 'TREASURE'});
+if(treasureLocationArray != undefined){
+treasureLocation.push(treasureLocationArray[1],treasureLocationArray[2]);
+}
+
+let blacksmithLocation = [];
+let blacksmithLocationArray = poiArray.find((element) => {return element[0] == 'BLACKSMITH'});
+if(blacksmithLocationArray != undefined){
+blacksmithLocation.push(blacksmithLocationArray[1],blacksmithLocationArray[2]);
+}
+
+let dragonLocation = [];
+let dragonLocationArray = poiArray.find((element) => {return element[0] == 'DRAGON'});
+if(dragonLocationArray != undefined){
+dragonLocation.push(dragonLocationArray[1],dragonLocationArray[2]);
+}
+
+let wizardLocation = [];
+let wizardLocationArray = poiArray.find((element) => {return element[0] == 'WIZARD'});
+if(wizardLocationArray != undefined){
+wizardLocation.push(wizardLocationArray[1],wizardLocationArray[2]);
+}
+
+let questLocation = [];
+let questLocationArray = poiArray.find((element) => {return element[0] == O});
+questLocation.push(questLocationArray[1],questLocationArray[2]);
+
+/*
+console.log(startingPoint);
+console.log(princessLocation);
+console.log(castleLocation);
+console.log(stableLocation);
+console.log(treasureLocation);
+console.log(blacksmithLocation);
+console.log(dragonLocation);
+console.log(wizardLocation);
+console.log(questLocation);
+*/
+
+
+// step 6: I need to make a function for determining how many days to add to each
+// cell in the pathfinding algo used in step 5.
+// Note: notice I have to switch the x and y coordinates to get the right cell in mapArray.
+// Note: had to modify function to return an array with the days to add and resulting hero stats. 
+let howManyDaysAndHeroStats = function (xCoord,yCoord, sA){
+    if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == undefined){
+        return [0,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+    } else if(mapArray[yCoord] == undefined){
+        return [0,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'H'){
+        return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'G'){
+        if(sA[1] == 0){
+            return [2,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        } else {
+            return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'W'){ 
+        if(sA[0] == 0 && sA[1] == 0){
+            return [2,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        } else if(sA[0] == 0 && sA[1] == 1){
+            return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        } else if(sA[0] == 1){
+            return [0,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],1]]
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'R'){
+        return [0,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],1]]
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'P'){
+        if(sA[0] == 0 && sA[4] == 0 && quest[0] == 'P'){
+            return [4,[sA[0],sA[1],sA[2],sA[3],1,1,sA[6]]];
+        } else if(sA[0] == 0 && sA[4] == 0){
+            return [4,[sA[0],sA[1],sA[2],sA[3],1,sA[5],sA[6]]];
+        } else if(sA[0] == 1 && sA[4] == 0 && quest[0] == 'P'){
+            return [2,[sA[0],sA[1],sA[2],sA[3],1,1,sA[6]]];
+        } else if(sA[0] == 1 && sA[4] == 0){
+            return [2,[sA[0],sA[1],sA[2],sA[3],1,sA[5],sA[6]]];
+        } else {
+            return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'D'){
+        if(sA[0] == 0 && sA[2] == 0 && quest[0] == 'D'){
+            return [4,[sA[0],sA[1],1,sA[3],sA[4],1,sA[6]]];
+        } else if(sA[0] == 0 && sA[2] == 0){
+            return [4,[sA[0],sA[1],1,sA[3],sA[4],sA[5],sA[6]]];
+        } else if(sA[0] == 1 && sA[2] == 0 && quest[0] == 'D'){
+            return [2,[sA[0],sA[1],1,sA[3],sA[4],1,sA[6]]];
+        } else if(sA[0] == 1 && sA[2] == 0){
+            return [2,[sA[0],sA[1],1,sA[3],sA[4],sA[5],sA[6]]];
+        } else {
+            return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'C'){
+        if(sA[5] == 0){
+            return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        } else {
+            return [0,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'ST'){
+        if(sA[1] == 0){
+            return[1,[sA[0],1,sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        } else {
+        return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'B'){
+        if(sA[0] == 0){
+            return[1,[1,sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        } else {
+        return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'T'){
+        if(sA[0] == 0 && sA[3] == 0 && quest[0] == 'T'){
+            return [4,[sA[0],sA[1],sA[2],1,sA[4],1,sA[6]]];
+        } else if(sA[0] == 0 && sA[3] == 0){
+            return [4,[sA[0],sA[1],sA[2],1,sA[4],sA[5],sA[6]]];
+        } else if(sA[0] == 1 && sA[3] == 0 && quest[0] == 'T'){
+            return [2,[sA[0],sA[1],sA[2],1,sA[4],1,sA[6]]];
+        } else if(sA[0] == 1 && sA[3] == 0){
+            return [2,[sA[0],sA[1],sA[2],1,sA[4],sA[5],sA[6]]];
+        } else {
+            return [1,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'M'){
+        if(sA[1] == 0){
+            return [4,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        } else {
+            return [0,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],1]];
+        }
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'WZ'){
+        return [0,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]]
+    } else if(mapArray[yCoord] != undefined && mapArray[yCoord][xCoord] == 'S'){
+        if(sA[1] == 0){
+            return [6,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        } else {
+            return [3,[sA[0],sA[1],sA[2],sA[3],sA[4],sA[5],sA[6]]];
+        }
+    }
+    
+}
+
+
+// step 5, I googled pathfinding, I probably would not of thought of the algorithm on my own.
+// I am going to use "Sample algorithm" found here: https://en.wikipedia.org/wiki/Pathfinding
+// except I am going to initialize the queue in the algorithm from starting position instead
+// of ending position, basically go from beginning to end, instead of end to beginning like
+// the article does.
+
+// step 7: make the below pathfinding algo into a method that I can call so that 
+// I can calculate the total days for each path between each point of interest. I'll need to
+// use the method many times to calculate total days for each sequence the journey can take.
+// Sequence meaning each POI hit and in what order.
+
+let resultOfRouteLeg = function (startOfLeg, endOfLeg, avoidLocation) {
+// pre step 1 of algo: initialize queue, I am doing it with starting position.
+let queue = [startOfLeg];
+
+// go through every element in the queue, including new elements added to the 
+// end over the course of the algorithm
+for(i = 0; i < queue.length; i++){
+    //console.log('queue');
+    //console.log(queue);
+    // step 1 of algo: get adjacent cells of the next cell in queue.
+    let listOfAdjacentCells = [];
+    for(k = 0; k < 8; k++){
+        if(k === 0){
+            let daysIncreaseAndHeroStats0 = howManyDaysAndHeroStats(queue[i][0] - 1, queue[i][1] - 1, queue[i][3]);
+            let upperLeftAdjacent = [queue[i][0] - 1, queue[i][1] - 1, queue[i][2] + daysIncreaseAndHeroStats0[0], daysIncreaseAndHeroStats0[1]];
+            listOfAdjacentCells.push(upperLeftAdjacent);
+        } else if(k === 1){
+            let daysIncreaseAndHeroStats1 = howManyDaysAndHeroStats(queue[i][0], queue[i][1] - 1, queue[i][3]);
+            let topAdjacent = [queue[i][0], queue[i][1] - 1, queue[i][2] + daysIncreaseAndHeroStats1[0], daysIncreaseAndHeroStats1[1]];
+            listOfAdjacentCells.push(topAdjacent);
+        } else if(k === 2){
+            let daysIncreaseAndHeroStats2 = howManyDaysAndHeroStats(queue[i][0] + 1, queue[i][1] - 1, queue[i][3]);
+            let upperRightAdjacent = [queue[i][0] + 1, queue[i][1] - 1, queue[i][2] + daysIncreaseAndHeroStats2[0], daysIncreaseAndHeroStats2[1]];
+            listOfAdjacentCells.push(upperRightAdjacent);
+        } else if(k === 3){
+            let daysIncreaseAndHeroStats3 = howManyDaysAndHeroStats(queue[i][0] + 1, queue[i][1], queue[i][3]);
+            let rightAdjacent = [queue[i][0] + 1, queue[i][1], queue[i][2] + daysIncreaseAndHeroStats3[0], daysIncreaseAndHeroStats3[1]];
+            listOfAdjacentCells.push(rightAdjacent);
+        } else if(k === 4){
+            let daysIncreaseAndHeroStats4 = howManyDaysAndHeroStats(queue[i][0] + 1, queue[i][1] + 1, queue[i][3]);
+            let lowerRightAdjacent = [queue[i][0] + 1, queue[i][1] + 1, queue[i][2] + daysIncreaseAndHeroStats4[0], daysIncreaseAndHeroStats4[1]];
+            listOfAdjacentCells.push(lowerRightAdjacent);
+        } else if(k === 5){
+            let daysIncreaseAndHeroStats5 = howManyDaysAndHeroStats(queue[i][0], queue[i][1] + 1, queue[i][3]);
+            let bottomAdjacent = [queue[i][0], queue[i][1] + 1, queue[i][2] + daysIncreaseAndHeroStats5[0], daysIncreaseAndHeroStats5[1]];
+            listOfAdjacentCells.push(bottomAdjacent);
+        } else if(k === 6){
+            let daysIncreaseAndHeroStats6 = howManyDaysAndHeroStats(queue[i][0] - 1, queue[i][1] + 1, queue[i][3]);
+            let bottomLeftAdjacent = [queue[i][0] - 1, queue[i][1] + 1, queue[i][2] + daysIncreaseAndHeroStats6[0], daysIncreaseAndHeroStats6[1]];
+            listOfAdjacentCells.push(bottomLeftAdjacent);
+        } else if(k === 7){
+            let daysIncreaseAndHeroStats7 = howManyDaysAndHeroStats(queue[i][0] - 1, queue[i][1], queue[i][3]);
+            let LeftAdjacent = [queue[i][0] - 1, queue[i][1], queue[i][2] + daysIncreaseAndHeroStats7[0], daysIncreaseAndHeroStats7[1]];
+            listOfAdjacentCells.push(LeftAdjacent);
+        }
+    }
+     
+    //console.log(listOfAdjacentCells);
+    //console.log('testBreak');
+    
+    
+    // step 2 of algo: check all cells in each list for the following two conditions:
+    // 1. If the cell is a wall, remove it from the list.
+    // 2. if there is an element in the queue list with the same coordinate, (had to 
+    // edit algo for puzzle complexity) check to see which one of the elements in the queue or
+    // the listOfAdjacentCells has the smallest amount of days, then remove the cell from the
+    // array which contains the element with the largest days.
+    // 3. Had to add for puzzle, If currentHero.equipmentBlock = true, then remove cell from
+    // listOfAdjacentCells.
+    // 4. Had to add another filter for the times that resultOfLeg needs to be calculated while avoiding
+    // a stable or blacksmith.
+
+    // step 2 - 1:
+    for(j = 0; j < listOfAdjacentCells.length; j++){
+        if(listOfAdjacentCells[j][0] == -1 || listOfAdjacentCells[j][1] == -1 || listOfAdjacentCells[j][0] == W || listOfAdjacentCells[j][1] == H){
+            listOfAdjacentCells.splice(j,1);
+            j--;
+        }
+    }
+
+    // step 2 - 3
+    listOfAdjacentCells = listOfAdjacentCells.filter((item) => {
+        if(item[3][6] == 1){
+            return false;
+        } else {
+            return true;
+        }
+    })
+
+
+    // step 2 - 2:
+    // *** this could be optimized, probably
+    //console.log(listOfAdjacentCells);
+    
+    listOfAdjacentCells = listOfAdjacentCells.filter((item) => {
+        let retBoolValue = true;
+        for(m = 0; m < queue.length; m++){
+            if(queue[m][0] == item[0] && queue[m][1] == item[1]){
+                if(queue[m][2] > item[2] && (queue[m][3][0] != item[3][0] || queue[m][3][1] != item[3][1])){
+                    retBoolValue = true;
+                } else if(queue[m][2] > item[2]){
+                    queue.splice(m,1);
+                    i--;
+                    retBoolValue = true;
+                } else {
+                retBoolValue = false;
+                break;
+                }
+            }
+        }
+        return retBoolValue;
+    })
+
+    // step 2 - 4:
+    //console.log(avoidLocation);
+    if(avoidLocation != undefined && avoidLocation == 'AVOID_STABLE'){
+        listOfAdjacentCells = listOfAdjacentCells.filter((item) => {
+            //console.log(item[3][1] != 1);
+            return item[3][1] != 1;
+        })
+    } 
+
+    if(avoidLocation != undefined && avoidLocation == 'AVOID_BLACKSMITH'){
+        listOfAdjacentCells = listOfAdjacentCells.filter((item) => {
+            return item[3][0] != 1;
+        })
+    }
+
+
+    //console.log(listOfAdjacentCells);
+
+
+    //console.log(queue);
+
+    // step 3 of algo: Add all remaining cells in the cells list (listOfAdjacentCells) 
+    // to the end of the main list (queue).
+    for(m = 0; m < listOfAdjacentCells.length; m++){
+        queue.push(listOfAdjacentCells[m]);
+    }
+
+    //console.log(queue);
+    
+    // step 4 of the algo is "Go to the next item in the list (queue)".
+    // But we are going to check if the queue has all valid map tiles in it then
+    // if it does, we are going to end the loop and return the destination tile 
+    // after the algo replaces any previously reached destination tile with one that
+    // has a shorter total days.
+    
+    
+    if(i == queue.length - 1){
+
+    let endingStateOfLegFromQueue = queue.find((item) => {
+        if(item[0] == endOfLeg[0] && item[1] == endOfLeg[1]){
+            return true;
+        } else {
+            return false;
+        }
+    })
+    
+        if(endingStateOfLegFromQueue == undefined){
+            return "stuck";
+        } else {
+            return endingStateOfLegFromQueue;
+        }
+        
+    }
+
+
+}
+}
+
+
+let getLeastDays = function (){
+    let routeQueue = [startingPoint];
+    for(p = 0; p < routeQueue.length; p++){
+        //console.log((N-1)+((N-2)*(N-3)+1)*(N-3)+N-2+300);
+        if(routeQueue.length < (N-1)+((N-2)*(N-3)+1)*(N-3)+N-2+1000){
+        let listOfNextRouteStopResults = [];
+        if((Math.abs(routeQueue[p][0] - wizardLocation[0]) + Math.abs(routeQueue[p][1] - wizardLocation[1])) != 0){
+        //console.log('p'+p);
+        for(r = 0; r < (poiArray.length - 1); r++){
+            if(r+1 < poiArray.length){
+                //console.log('r'+r);
+                let stablePresent = poiArray.find((element) => {return element[0] == 'STABLE'})
+                let blacksmithPresent = poiArray.find((element) => {return element[0] == 'BLACKSMITH'})
+                if(stablePresent != undefined){
+                    
+                    //console.log('test' + resultOfRouteLeg(routeQueue[p],[poiArray[r+1][1],poiArray[r+1][2]])[3][1]);
+                    if(resultOfRouteLeg(routeQueue[p],[poiArray[r+1][1],poiArray[r+1][2]])[3][1] != routeQueue[p][3][1]){
+                    listOfNextRouteStopResults.push(resultOfRouteLeg(routeQueue[p],[poiArray[r+1][1],poiArray[r+1][2]],'AVOID_STABLE'));
+                    }
+                } else if(blacksmithPresent != undefined){
+                    if(resultOfRouteLeg(routeQueue[p],[poiArray[r+1][1],poiArray[r+1][2]])[3][1] != routeQueue[p][3][1]){
+                    listOfNextRouteStopResults.push(resultOfRouteLeg(routeQueue[p],[poiArray[r+1][1],poiArray[r+1][2]],'AVOID_BLACKSMITH'));
+                    }
+                }
+                listOfNextRouteStopResults.push(resultOfRouteLeg(routeQueue[p],[poiArray[r+1][1],poiArray[r+1][2]]));
+            }
+        }
+        } else {
+        //console.log('wizard');
+        let locationToZapTo = [];
+        let smallestMD = (W - 1) + (H  - 1);
+        for(t = 0; t < poiArray.length; t++){
+            if((Math.abs(routeQueue[p][0] - poiArray[t][1]) + Math.abs(routeQueue[p][1] - poiArray[t][2])) != 0){
+                if(smallestMD > Math.abs(routeQueue[p][0] - poiArray[t][1]) + Math.abs(routeQueue[p][1] - poiArray[t][2])){
+                    locationToZapTo = [poiArray[t][1],poiArray[t][2]];
+                    smallestMD = (Math.abs(routeQueue[p][0] - poiArray[t][1]) + Math.abs(routeQueue[p][1] - poiArray[t][2]))
+                }
+            }
+        }
+        let daysIncreaseAndHeroStats8 = howManyDaysAndHeroStats(locationToZapTo[0],locationToZapTo[1],routeQueue[p][3]);
+        listOfNextRouteStopResults.push([locationToZapTo[0], locationToZapTo[1], routeQueue[p][2] + daysIncreaseAndHeroStats8[0] + 1, daysIncreaseAndHeroStats8[1]]);
+        }
+        //console.log('routeQueue before');
+        //console.log(routeQueue);
+        //console.log('listOfNextRouteStopResults');
+        //console.log(listOfNextRouteStopResults);
+    
+        // decide which of the items in listOfNextRouteStopResults to filter and push onto routeQueue.
+
+
+        // filter listOfNextRouteStopResults for various cases.
+        listOfNextRouteStopResults = listOfNextRouteStopResults.filter((element) => {
+            let retValue = true;
+            // filter if element is castle without quest being completed
+            if(element[0] == poiArray[poiArray.length - 1][1] && element[1] == poiArray[poiArray.length - 1][2] && element[3][5] == 0){
+                retValue = false;
+            // filter if element is home
+            } else if(element[0] == poiArray[0][1] && element[1] == poiArray[0][2]){
+                retValue = false;
+            // filter if element is same as location you came from (routeQueue location).
+            } else if(element[0] == routeQueue[p][0] && element[1] == routeQueue[p][1]){
+                retValue = false;
+            // filter if resultOfRoute is being 'stuck'.
+            } else if (element == 'stuck'){
+                retValue = false;
+            }
+            //console.log(retValue);
+            return retValue;
+        })
+
+        // if current item in routeQueue (indicated by p) is not the last item and is not the castle location, then run the next block of code.
+        if(!(p == (routeQueue.length - 1) && routeQueue[routeQueue.length - 1][0] == castleLocation[0] && routeQueue[routeQueue.length - 1][1] == castleLocation[1])){
+            // if current item in routeQueue equals castleLocation, don't add listOfNextRouteStopResults to routeQueue. 
+            if(!(routeQueue[p][0] == castleLocation[0] && routeQueue[p][1] == castleLocation[1])){
+                for(s = 0; s < listOfNextRouteStopResults.length; s++){
+                    routeQueue.push(listOfNextRouteStopResults[s]);
+                }
+            }
+        }
+
+        //console.log('routeQueue after');
+        //console.log(routeQueue);
+    } else {
+        p = routeQueue.length;
+
+    }
+    }
+        let smallestDaysQuestComplete;
+        let arrayOfQuestCompletedScenarios = routeQueue.filter((element) => {
+            return element[3][5] == 1 && element[0] == castleLocation[0] && element[1] == castleLocation[1];
+        });
+        let retValue = 100000000;
+        for(z = 0; z < arrayOfQuestCompletedScenarios.length; z++){
+            if(retValue > arrayOfQuestCompletedScenarios[z][2]){
+                retValue = arrayOfQuestCompletedScenarios[z][2];
+            }
+        }
+        smallestDaysQuestComplete = retValue;
+        return smallestDaysQuestComplete;
+
+    
+
+}
+
+console.log(getLeastDays());
